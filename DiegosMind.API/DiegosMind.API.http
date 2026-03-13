@@ -1,0 +1,6 @@
+@DiegosMind.API_HostAddress = http://localhost:5161
+
+GET {{DiegosMind.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
