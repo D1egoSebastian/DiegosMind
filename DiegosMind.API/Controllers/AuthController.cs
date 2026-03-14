@@ -39,7 +39,7 @@ namespace DiegosMind.API.Controllers
                 Name = dto.Name,
                 Email = dto.EmailAddress,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Created_at = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(newUser);

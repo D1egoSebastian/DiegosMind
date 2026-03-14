@@ -13,8 +13,8 @@
         public int Rating { get; set; }
         public string Coverimageurl { get; set; }
         public bool Published { get; set; }
-        public DateTime Created_at { get; set; }
-        public DateTime Updated_at { get;set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get;set; }
 
         public List<PostTag>? PostTags { get; set; }
     }
