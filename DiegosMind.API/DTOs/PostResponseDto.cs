@@ -10,6 +10,7 @@
         public string? CoverImageUrl { get; set; }
         public bool Published { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public string? CategoryName { get; set; }
         public List<string>? Tags { get; set; }
 

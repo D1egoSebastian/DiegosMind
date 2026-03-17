@@ -45,6 +45,7 @@ namespace DiegosMind.API.Controllers
                 Published = p.Published,
                 CoverImageUrl = p.Coverimageurl,
                 CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
                 CategoryName = p.Category.Name,
                 Tags = p.PostTags?.Select(pt => pt.Tag?.Name).ToList()
             }));
@@ -74,6 +75,7 @@ namespace DiegosMind.API.Controllers
                 Published = findpostslug.Published,
                 CoverImageUrl = findpostslug.Coverimageurl,
                 CreatedAt = findpostslug.CreatedAt,
+                UpdatedAt = findpostslug.UpdatedAt,
                 CategoryName = findpostslug.Category?.Name,
                 Tags = findpostslug.PostTags?.Select(pt => pt.Tag?.Name).ToList()
             });
@@ -123,8 +125,8 @@ namespace DiegosMind.API.Controllers
                 {
                     TagId = tagId,
                 }).ToList(),
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
 
             };
 
@@ -149,26 +151,43 @@ namespace DiegosMind.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdatePost(int id, [FromBody] CreatePostDto dto)
         {
-            var findPost = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
+            var findPost = await _context.Posts
+                .Include(p => p.PostTags)  // importante incluir los PostTags
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (findPost == null) { return NotFound(new { message = "that post dont exist!" }); } ;
+            if (findPost == null) return NotFound(new { message = "that post dont exist!" });
+
+            
+            if (findPost.PostTags != null)
+            {
+                _context.PostTags.RemoveRange(findPost.PostTags);
+            }
 
             findPost.Title = dto.Title;
             findPost.Content = dto.Content;
             findPost.CategoryId = dto.CategoryId;
             findPost.Rating = (int)dto.Rating;
             findPost.Coverimageurl = dto.Coverimageurl;
+            findPost.Published = dto.Published;
+            findPost.UpdatedAt = DateTime.UtcNow;
             findPost.PostTags = dto.TagIds?.Select(tagId => new PostTag
             {
                 TagId = tagId,
             }).ToList();
-          
-            findPost.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
-            return Ok(findPost);
-
+            return Ok(new PostResponseDto
+            {
+                Id = findPost.Id,
+                Title = findPost.Title,
+                Content = findPost.Content,
+                Slug = findPost.Slug,
+                Rating = findPost.Rating,
+                Published = findPost.Published,
+                CoverImageUrl = findPost.Coverimageurl,
+                UpdatedAt = findPost.UpdatedAt
+            });
         }
 
         [HttpDelete("{id}")]
