@@ -1,0 +1,13 @@
+﻿# .NET
+**/bin/
+**/obj/
+**/appsettings.json
+**/appsettings.Development.json
+
+# Node
+**/node_modules/
+**/.next/
+
+# Environment
+.env
+.env.local
