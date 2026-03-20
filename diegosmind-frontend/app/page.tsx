@@ -58,7 +58,7 @@ export default function Home() {
           Diego's <span style={{ color: "#a78bfa", fontStyle: "italic" }}>Mind</span>
         </h1>
         <p style={{ fontSize: 15, color: "#555", margin: "0 auto", maxWidth: 480, lineHeight: 1.7 }}>
-          Reviews, reflections, and raw thoughts on games, films, books, and the human condition.
+          A collection of pieces of my mind.
         </p>
       </motion.div>
 

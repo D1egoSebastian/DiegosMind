@@ -37,3 +37,14 @@ export const login = (data) =>
     // Categories
     export const getCategories = () =>
     fetch(`${API_URL}/categories`, { headers: headers() });
+
+    export const uploadImage = (file) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${API_URL}/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+    });
+};
