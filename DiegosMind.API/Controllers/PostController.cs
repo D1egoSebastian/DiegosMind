@@ -51,6 +51,34 @@ namespace DiegosMind.API.Controllers
             }));
         }
 
+        [HttpGet("id/{id}")]
+
+        public async Task<IActionResult> GetPostById(int id)
+        {
+            var findPost = await _context.Posts
+                .Include (c => c.Category)
+                .Include(p => p.PostTags)
+                .ThenInclude (p => p.Tag)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (findPost == null) return NotFound(new { message = "that post dont exist!" });
+
+            return Ok(new PostResponseDto
+            {
+                Id = findPost.Id,
+                Title = findPost.Title,
+                Content = findPost.Content,
+                Slug = findPost.Slug,
+                Rating = findPost.Rating,
+                Published = findPost.Published,
+                CoverImageUrl = findPost.Coverimageurl,
+                CreatedAt = findPost.CreatedAt,
+                UpdatedAt = findPost.UpdatedAt,
+                CategoryName = findPost.Category?.Name,
+                Tags = findPost.PostTags?.Select(pt => pt.Tag?.Name).ToList()
+            });
+        }
+
         [HttpGet("{slug}")]
         public async Task<IActionResult> GetPostBySlug(string slug)
         {
