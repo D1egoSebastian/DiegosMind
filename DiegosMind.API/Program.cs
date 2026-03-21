@@ -40,6 +40,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:3000",
             "https://localhost:3000",
+            "https://diegos-mind-89el7afgi-d1egosebastians-projects.vercel.app",
             "https://diegosmind.vercel.app"
         )
         .AllowAnyHeader()
