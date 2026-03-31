@@ -1,7 +1,11 @@
+"use client";
+
 import { getPostBySlug } from "@/services/api";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 function StarRating({ rating }: { rating: number }) {
     return (
@@ -14,17 +18,26 @@ function StarRating({ rating }: { rating: number }) {
     );
 }
 
-export const revalidate = 3600;
+export default function PostPage() {
+    const params = useParams();
+    const slug = params?.slug as string;
+    const [post, setPost] = useState<any>(null);
 
-export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = await params;
-    const res = await getPostBySlug(slug);
-    
-    if (!res.ok) {
-        notFound();
-    }
-    
-    const post = await res.json();
+    useEffect(() => {
+        if (slug) {
+            getPostBySlug(slug).then((res) => {
+                if (!res.ok) return;
+                res.json().then((data) => setPost(data));
+            });
+        }
+    }, [slug]);
+
+    if (!post) return (
+        <main style={{ background: "#0d0d0f", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ color: "#333", fontSize: 14 }}>Loading...</p>
+        </main>
+    );
+
     const paragraphs = post.content?.split("\n\n") ?? [post.content];
 
     return (
