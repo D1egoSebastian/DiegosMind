@@ -1,9 +1,6 @@
-"use client";
-
 import Link from "next/link";
 import { getPosts } from "@/services/api";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -16,18 +13,23 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export default function Home() {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const categories = ["All", "Games", "Movies", "Books", "Philosophy", "Thoughts"];
+async function getPostsData() {
+  const res = await getPosts();
+  if (!res.ok) return [];
+  return res.json();
+}
 
-  useEffect(() => {
-    getPosts().then((res) => res.json()).then((data) => setPosts(data));
-  }, []);
+export const revalidate = 3600;
+
+export default async function Home({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+  const posts = await getPostsData();
+  const params = await searchParams;
+  const activeCategory = params.category || "All";
+  const categories = ["All", "Games", "Movies", "Books", "Philosophy", "Thoughts"];
 
   const filtered = activeCategory === "All"
     ? posts
-    : posts.filter((p) => p.categoryName?.toLowerCase() === activeCategory.toLowerCase());
+    : posts.filter((p: any) => p.categoryName?.toLowerCase() === activeCategory.toLowerCase());
 
   return (
     <main style={{ background: "#0d0d0f", minHeight: "100vh", color: "#e8e8e8", fontFamily: "sans-serif" }}>
@@ -75,7 +77,6 @@ export default function Home() {
           {categories.map((cat) => (
             <motion.button
               key={cat}
-              onClick={() => setActiveCategory(cat)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               style={{
@@ -87,7 +88,9 @@ export default function Home() {
                 cursor: "pointer", transition: "all 0.2s"
               }}
             >
-              {cat}
+              <Link href={cat === "All" ? "/" : `/?category=${cat}`} style={{ textDecoration: "none", color: "inherit" }}>
+                {cat}
+              </Link>
             </motion.button>
           ))}
         </motion.div>

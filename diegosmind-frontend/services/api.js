@@ -15,15 +15,17 @@ const headers = () => ({
 export const login = (data) =>
     fetch(`${API_URL}/auth/login`, { method: "POST", headers: headers(), body: JSON.stringify(data) });
 
-    // Posts
-    export const getPosts = () =>
-    fetch(`${API_URL}/post`, { headers: headers() });
+const REVALIDATE_TIME = 3600; // 1 hour
 
-    export const getPostById = (id) =>
-    fetch(`${API_URL}/post/id/${id}`, { headers: headers() });
+// Posts
+export const getPosts = () =>
+    fetch(`${API_URL}/post`, { next: { revalidate: REVALIDATE_TIME }, headers: headers() });
 
-    export const getPostBySlug = (slug) =>
-    fetch(`${API_URL}/post/${slug}`, { headers: headers() });
+export const getPostById = (id) =>
+    fetch(`${API_URL}/post/id/${id}`, { next: { revalidate: REVALIDATE_TIME }, headers: headers() });
+
+export const getPostBySlug = (slug) =>
+    fetch(`${API_URL}/post/${slug}`, { next: { revalidate: REVALIDATE_TIME }, headers: headers() });
 
     export const createPost = (data) =>
     fetch(`${API_URL}/post`, { method: "POST", headers: authHeaders(), body: JSON.stringify(data) });
@@ -35,8 +37,8 @@ export const login = (data) =>
     fetch(`${API_URL}/post/${id}`, { method: "DELETE", headers: authHeaders() });
 
     // Categories
-    export const getCategories = () =>
-    fetch(`${API_URL}/categories`, { headers: headers() });
+export const getCategories = () =>
+    fetch(`${API_URL}/categories`, { next: { revalidate: REVALIDATE_TIME }, headers: headers() });
 
     export const uploadImage = (file) => {
     const token = localStorage.getItem("token");
