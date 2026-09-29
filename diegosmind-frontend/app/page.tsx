@@ -2,162 +2,188 @@
 
 import Link from "next/link";
 import { getPosts } from "@/services/api";
-import { motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import SiteNav from "@/components/SiteNav";
+import CoverImage from "@/components/CoverImage";
+import RatingMeter from "@/components/RatingMeter";
 
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span key={star} style={{ color: rating / 2 >= star ? "#a78bfa" : "#2a2a2a", fontSize: 14 }}>★</span>
-      ))}
-      <span style={{ fontSize: 12, color: "#555", marginLeft: 4 }}>{rating}/10</span>
-    </div>
-  );
-}
+const CATEGORIES = ["All", "Games", "Movies", "Books", "Philosophy", "Thoughts"];
+const EASE = [0.2, 0.7, 0.2, 1] as const;
+
+const readMinutes = (content?: string) =>
+  Math.max(1, Math.ceil((content?.trim().split(/\s+/).length ?? 0) / 200));
 
 export default function Home() {
   const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
-  const categories = ["All", "Games", "Movies", "Books", "Philosophy", "Thoughts"];
 
   useEffect(() => {
-    getPosts().then((res) => res.json()).then((data) => setPosts(data));
+    getPosts()
+      .then((res) => res.json())
+      .then((data) => setPosts(data))
+      .finally(() => setLoading(false));
   }, []);
 
-  const filtered = activeCategory === "All"
-    ? posts
-    : posts.filter((p) => p.categoryName?.toLowerCase() === activeCategory.toLowerCase());
+  const filtered =
+    activeCategory === "All"
+      ? posts
+      : posts.filter((p) => p.categoryName?.toLowerCase() === activeCategory.toLowerCase());
 
   return (
-    <main style={{ background: "#0d0d0f", minHeight: "100vh", color: "#e8e8e8", fontFamily: "sans-serif" }}>
+    <MotionConfig reducedMotion="user">
+      <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <SiteNav />
 
-      {/* Nav */}
-      <motion.nav
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", borderBottom: "0.5px solid #1e1e1e" }}
-      >
-        <span style={{ fontSize: 16, fontWeight: 500, color: "#fff" }}>Diego's Mind</span>
-        <div style={{ display: "flex", gap: 28 }}>
-          <Link href="/" style={{ fontSize: 14, color: "#555", textDecoration: "none" }}>Journal</Link>
-          <Link href="/about" style={{ fontSize: 14, color: "#555", textDecoration: "none" }}>About</Link>
-        </div>
-      </motion.nav>
-
-      {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        style={{ padding: "72px 40px 56px", textAlign: "center", borderBottom: "0.5px solid #1e1e1e" }}
-      >
-        <p style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.2em", margin: "0 0 16px" }}>Personal Journal</p>
-        <h1 style={{ fontSize: 64, fontWeight: 500, color: "#fff", margin: "0 0 16px", lineHeight: 1.1 }}>
-          Diego's <span style={{ color: "#a78bfa", fontStyle: "italic" }}>Mind</span>
-        </h1>
-        <p style={{ fontSize: 15, color: "#555", margin: "0 auto", maxWidth: 480, lineHeight: 1.7 }}>
-          A collection of pieces of my mind.
-        </p>
-      </motion.div>
-
-      {/* Posts */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 40px" }}>
-
-        {/* Category filters */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          style={{ display: "flex", gap: 8, marginBottom: 48, flexWrap: "wrap" }}
+        <section
+          className="page-pad"
+          style={{
+            position: "relative",
+            padding: "96px 56px 64px",
+            textAlign: "center",
+            overflow: "hidden",
+            borderBottom: "1px solid var(--border)",
+          }}
         >
-          {categories.map((cat) => (
-            <motion.button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em",
-                padding: "6px 14px", borderRadius: 20, border: "0.5px solid",
-                borderColor: activeCategory === cat ? "#a78bfa" : "#2a2a2a",
-                color: activeCategory === cat ? "#0d0d0f" : "#555",
-                background: activeCategory === cat ? "#a78bfa" : "transparent",
-                cursor: "pointer", transition: "all 0.2s"
-              }}
+          <div className="hero-grid" />
+          <motion.div
+            style={{ position: "relative" }}
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            <p
+              className="font-mono-ui"
+              style={{ fontSize: 11, letterSpacing: "0.3em", color: "var(--text-tertiary)", textTransform: "uppercase", margin: "0 0 20px" }}
             >
-              {cat}
-            </motion.button>
-          ))}
-        </motion.div>
-
-        {/* Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "32px 32px" }}>
-          {filtered.map((post: any, i: number) => (
-            <motion.div
-              key={post.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              whileHover={{ y: -6 }}
+              Personal Journal
+            </p>
+            <h1
+              className="font-display hero-title"
+              style={{ fontSize: 68, fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.01em", margin: "0 0 20px" }}
             >
-              <Link href={`/post/${post.slug}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column" }}>
+              Fragments worth <span className="grad-text">keeping.</span>
+            </h1>
+            <p style={{ fontSize: 16, color: "var(--text-secondary)", maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>
+              A collection of pieces of my mind.
+            </p>
+          </motion.div>
+        </section>
 
-                {/* Image */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ width: "100%", height: 220, borderRadius: 8, overflow: "hidden", marginBottom: 16, background: "#1a1a1a" }}
-                >
-                  {post.coverImageUrl ? (
-                    <img src={post.coverImageUrl} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div style={{ width: "100%", height: "100%", background: "#111" }} />
-                  )}
-                </motion.div>
+        <section
+          className="page-pad"
+          style={{ maxWidth: 1160, width: "100%", boxSizing: "border-box", margin: "0 auto", padding: "40px 56px 100px", flexGrow: 1 }}
+        >
+          <motion.div
+            style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 44 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+          >
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                className="pill"
+                data-active={activeCategory === cat}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </motion.div>
 
-                {/* Badge + read time */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em",
-                    padding: "3px 10px", borderRadius: 20,
-                    background: "rgba(167, 139, 250, 0.15)", color: "#a78bfa",
-                    border: "0.5px solid rgba(167, 139, 250, 0.3)"
-                  }}>
-                    {post.categoryName}
-                  </span>
-                  <span style={{ fontSize: 12, color: "#444" }}>5 min</span>
+          {loading ? (
+            <div className="post-grid">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i}>
+                  <div className="skeleton" style={{ aspectRatio: "4 / 3", marginBottom: 18 }} />
+                  <div className="skeleton" style={{ height: 18, width: "70%", marginBottom: 10 }} />
+                  <div className="skeleton" style={{ height: 12, width: "90%" }} />
                 </div>
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="font-mono-ui" style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+              Nothing here yet.
+            </p>
+          ) : (
+            <motion.div layout className="post-grid">
+              <AnimatePresence mode="popLayout">
+                {filtered.map((post: any, i: number) => (
+                  <motion.div
+                    key={post.id}
+                    layout
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.5, ease: EASE, delay: Math.min(i, 8) * 0.06 }}
+                  >
+                    <Link href={`/post/${post.slug}`} className="post-card">
+                      <CoverImage src={post.coverImageUrl} alt={post.title}>
+                        <div className="cover-shade" />
+                        <span
+                          className="font-mono-ui"
+                          style={{ position: "absolute", top: 12, left: 14, fontSize: 11, color: "rgba(255,255,255,0.5)" }}
+                        >
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className="category-tag" style={{ position: "absolute", bottom: 12, left: 12 }}>
+                          {post.categoryName}
+                        </span>
+                      </CoverImage>
 
-                {/* Title */}
-                <h2 style={{ fontSize: 18, fontWeight: 500, color: "#e8e8e8", margin: "0 0 10px", lineHeight: 1.4 }}>
-                  {post.title}
-                </h2>
-
-                {/* Excerpt */}
-                <p style={{ fontSize: 14, color: "#555", lineHeight: 1.6, margin: "0 0 14px", flex: 1 }}>
-                  {post.content?.substring(0, 110)}...
-                </p>
-
-                {/* Footer */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#333" }}>
-                    {new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                  {post.rating && <StarRating rating={post.rating} />}
-                </div>
-              </Link>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <h2
+                          className="font-display post-title"
+                          style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", margin: 0, lineHeight: 1.35 }}
+                        >
+                          {post.title}
+                        </h2>
+                        <span className="post-arrow" aria-hidden>
+                          →
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 13.5, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 16px", flex: 1 }}>
+                        {post.content?.substring(0, 110)}...
+                      </p>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span className="font-mono-ui" style={{ fontSize: 11.5, color: "var(--text-quiet)" }}>
+                          {new Date(post.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {" · "}
+                          {readMinutes(post.content)} min
+                        </span>
+                        {post.rating && <RatingMeter rating={post.rating} />}
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </motion.div>
-          ))}
-        </div>
-      </div>
+          )}
+        </section>
 
-      {/* Footer */}
-      <div style={{ padding: "32px 40px", borderTop: "0.5px solid #1a1a1a", display: "flex", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 12, color: "#2a2a2a" }}>© 2026 Diego Sebastian</span>
-        <span style={{ fontSize: 12, color: "#2a2a2a" }}>Built with Next.js + ASP.NET Core</span>
-      </div>
-    </main>
+        <footer
+          className="page-pad"
+          style={{
+            maxWidth: 1160,
+            width: "100%",
+            boxSizing: "border-box",
+            margin: "0 auto",
+            padding: "28px 56px 40px",
+            borderTop: "1px solid var(--border)",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <span className="font-mono-ui" style={{ fontSize: 11, color: "var(--text-quiet)" }}>
+            © 2026 Diego Sebastian
+          </span>
+          <span className="font-mono-ui" style={{ fontSize: 11, color: "var(--text-quiet)" }}>
+            Next.js × ASP.NET Core
+          </span>
+        </footer>
+      </main>
+    </MotionConfig>
   );
 }
