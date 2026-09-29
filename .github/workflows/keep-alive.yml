@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Ping Render API
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://diegosmind-api.onrender.com/api/Post)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://diegosmind-api.onrender.com/health)
           echo "API responded with status $STATUS"
