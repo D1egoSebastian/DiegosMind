@@ -1,150 +1,175 @@
 "use client";
 
 import { getPostBySlug } from "@/services/api";
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { MotionConfig, motion, useScroll, useSpring } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import SiteNav from "@/components/SiteNav";
+import CoverImage from "@/components/CoverImage";
+import RatingMeter from "@/components/RatingMeter";
 
-function StarRating({ rating }: { rating: number }) {
-    return (
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {[1, 2, 3, 4, 5].map((star) => (
-            <span key={star} style={{ color: rating / 2 >= star ? "#a78bfa" : "#2a2a2a", fontSize: 18 }}>★</span>
-        ))}
-        <span style={{ fontSize: 14, color: "#555", marginLeft: 6 }}>{rating}/10</span>
-        </div>
-    );
-}
+const EASE = [0.2, 0.7, 0.2, 1] as const;
+
+const readMinutes = (content?: string) =>
+  Math.max(1, Math.ceil((content?.trim().split(/\s+/).length ?? 0) / 200));
 
 export default function PostPage() {
-    const params = useParams();
-    const slug = params?.slug as string;
-    const [post, setPost] = useState<any>(null);
+  const params = useParams();
+  const slug = params?.slug as string;
+  const [post, setPost] = useState<any>(null);
+  const [failed, setFailed] = useState(false);
 
-    useEffect(() => {
-        if (slug) {
-            getPostBySlug(slug).then((res) => {
-                if (!res.ok) return;
-                res.json().then((data) => setPost(data));
-            });
-        }
-    }, [slug]);
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 24 });
 
-    if (!post) return (
-        <main style={{ background: "#0d0d0f", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "#333", fontSize: 14 }}>Loading...</p>
-        </main>
-    );
+  useEffect(() => {
+    if (!slug) return;
+    getPostBySlug(slug).then((res) => {
+      if (!res.ok) {
+        setFailed(true);
+        return;
+      }
+      res.json().then((data) => setPost(data));
+    });
+  }, [slug]);
 
-    const paragraphs = post.content?.split("\n\n") ?? [post.content];
-
+  if (!post) {
     return (
-        <main style={{ background: "#0d0d0f", minHeight: "100vh", color: "#e8e8e8", fontFamily: "sans-serif" }}>
+      <main style={{ minHeight: "100vh" }}>
+        <SiteNav />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+          <p className="font-mono-ui" style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
+            {failed ? "Post not found." : "Loading..."}
+          </p>
+        </div>
+      </main>
+    );
+  }
 
-        {/* Nav */}
-        <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", borderBottom: "0.5px solid #1e1e1e" }}>
-            <Link href="/" style={{ fontSize: 16, fontWeight: 500, color: "#fff", textDecoration: "none" }}>Diego's Mind</Link>
-            <div style={{ display: "flex", gap: 28 }}>
-            <Link href="/" style={{ fontSize: 14, color: "#555", textDecoration: "none" }}>Journal</Link>
-            <Link href="/about" style={{ fontSize: 14, color: "#555", textDecoration: "none" }}>About</Link>
-            </div>
-        </nav>
+  const paragraphs: string[] = post.content?.split("\n\n") ?? [post.content];
 
-        {/* Cover image con gradient */}
-        {post.coverImageUrl && (
+  return (
+    <MotionConfig reducedMotion="user">
+      <main style={{ minHeight: "100vh" }}>
+        <motion.div
+          style={{
+            scaleX: progress,
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            transformOrigin: "left",
+            background: "linear-gradient(90deg, var(--accent), var(--accent-2))",
+            zIndex: 60,
+          }}
+        />
+        <SiteNav />
+
+        <div className="page-pad" style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 56px 0" }}>
+          <Link href="/" className="back-link">
+            ← Back to journal
+          </Link>
+
+          {post.coverImageUrl && (
             <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            style={{ position: "relative", width: "100%", height: "55vh" }}
+              style={{ position: "relative", marginTop: 28 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: EASE }}
             >
-            <img
+              {/* Ambient glow: the same image, blurred behind the frame, so any photo blends with the page */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={post.coverImageUrl}
-                alt={post.title}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-            <div style={{
-                position: "absolute", inset: 0,
-                background: "linear-gradient(to top, #0d0d0f 0%, rgba(13,13,15,0.4) 50%, transparent 100%)"
-            }} />
+                alt=""
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  inset: -24,
+                  width: "calc(100% + 48px)",
+                  height: "calc(100% + 48px)",
+                  objectFit: "cover",
+                  filter: "blur(60px) saturate(1.3)",
+                  opacity: 0.32,
+                  zIndex: 0,
+                  pointerEvents: "none",
+                }}
+              />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <CoverImage src={post.coverImageUrl} alt={post.title} aspectRatio="21 / 9" className="post-hero-cover">
+                  <div className="cover-shade" style={{ opacity: 0.6 }} />
+                </CoverImage>
+              </div>
             </motion.div>
-        )}
+          )}
+        </div>
 
-        {/* Content */}
-        <article style={{
-            maxWidth: 680,
-            margin: "0 auto",
-            padding: post.coverImageUrl ? "0 40px 80px" : "56px 40px 80px",
-            marginTop: post.coverImageUrl ? "-120px" : 0,
-            position: "relative",
-            zIndex: 10
-        }}>
-            <motion.div
-            initial={{ opacity: 0, y: 30 }}
+        <article className="page-pad" style={{ maxWidth: 720, margin: "0 auto", padding: "48px 40px 100px", position: "relative", zIndex: 5 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            >
-            {/* Back link */}
-            <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#555", textDecoration: "none", marginBottom: 32 }}>
-                ← Back to journal
-            </Link>
-
-            {/* Badge + read time */}
+            transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <span style={{
-                fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em",
-                padding: "4px 12px", borderRadius: 20,
-                background: "rgba(167, 139, 250, 0.15)", color: "#a78bfa",
-                border: "0.5px solid rgba(167, 139, 250, 0.3)"
-                }}>
-                {post.categoryName}
-                </span>
-                <span style={{ fontSize: 12, color: "#444" }}>5 min read</span>
+              <span className="category-tag">{post.categoryName}</span>
+              <span className="font-mono-ui" style={{ fontSize: 12, color: "var(--text-quiet)" }}>
+                {readMinutes(post.content)} min read
+              </span>
             </div>
 
-            {/* Title */}
-            <h1 style={{ fontSize: 46, fontWeight: 500, color: "#fff", lineHeight: 1.2, margin: "0 0 20px" }}>
-                {post.title}
+            <h1
+              className="font-display"
+              style={{ fontSize: 44, fontWeight: 600, lineHeight: 1.2, letterSpacing: "-0.01em", margin: "0 0 22px" }}
+            >
+              {post.title}
             </h1>
 
-            {/* Date + Rating */}
-            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 40, paddingBottom: 32, borderBottom: "0.5px solid #1e1e1e" }}>
-                <span style={{ fontSize: 13, color: "#333", fontFamily: "monospace" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 20,
+                flexWrap: "wrap",
+                marginBottom: 36,
+                paddingBottom: 28,
+                borderBottom: "1px solid var(--border)",
+              }}
+            >
+              <span className="font-mono-ui" style={{ fontSize: 13, color: "var(--text-quiet)" }}>
                 {new Date(post.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                </span>
-                {post.rating && <StarRating rating={post.rating} />}
+              </span>
+              {post.rating && <RatingMeter rating={post.rating} size="lg" />}
             </div>
 
-            {/* Tags */}
             {post.tags?.length > 0 && (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 40 }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 40 }}>
                 {post.tags.map((tag: string) => (
-                    <span key={tag} style={{ fontSize: 12, color: "#3a3a3a", border: "0.5px solid #222", padding: "3px 10px", borderRadius: 20 }}>
+                  <span key={tag} className="tag-pill">
                     {tag}
-                    </span>
+                  </span>
                 ))}
-                </div>
+              </div>
             )}
 
-            {/* Content */}
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                {paragraphs.map((p: string, i: number) => (
+              {paragraphs.map((p: string, i: number) => (
                 <motion.p
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.3 + i * 0.05 }}
-                    style={{ fontSize: 18, color: "#888", lineHeight: 1.9, margin: 0 }}
+                  key={i}
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                  style={{ fontSize: 17.5, color: "var(--text-secondary)", lineHeight: 1.9, margin: 0, whiteSpace: "pre-line" }}
                 >
-                    {p}
+                  {p}
                 </motion.p>
-                ))}
+              ))}
             </div>
-
-            </motion.div>
+          </motion.div>
         </article>
-        </main>
-    );
+      </main>
+    </MotionConfig>
+  );
 }
